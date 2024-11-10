@@ -1,7 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function Hero() {
+  const navigate = useNavigate();
   return (
+    
     <section className="relative flex flex-col items-center justify-center h-screen text-white overflow-hidden bg-hero-pattern">
       {/* Glowing Vertical Line */}
       <div className="absolute left-8 top-0 h-full w-2 bg-white rounded-full shadow-[0_0_20px_rgba(255,255,255,0.8)] animate-pulse"></div>
@@ -15,7 +18,7 @@ function Hero() {
         <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto mb-8">
           Ask, visualize, and gain insights effortlessly. Our AI-powered platform turns your data requests into stunning visuals with just a prompt.
         </p>
-        <button className="px-8 py-3 mt-4 text-lg bg-transparent border-2 border-purple-400 text-purple-400 rounded-full hover:bg-purple-500 hover:text-white transition-all duration-300">
+        <button onClick={() => navigate('/upload')} className="px-8 py-3 mt-4 text-lg bg-transparent border-2 border-purple-400 text-purple-400 rounded-full hover:bg-purple-500 hover:text-white transition-all duration-300 ">
           Get Started →
         </button>
       </div>

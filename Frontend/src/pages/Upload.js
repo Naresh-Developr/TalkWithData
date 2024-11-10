@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function Upload() {
+  const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('');
 
@@ -25,19 +27,28 @@ function Upload() {
     multiple: false,
   });
 
-  const handleFileUpload = async (file) => {
+  const handleFileUpload = async (fileToUpload) => {
+    if (!fileToUpload) {
+      setUploadStatus("No file selected for upload.");
+      return;
+    }
+
     const formData = new FormData();
-    formData.append("file", file);
-  
+    formData.append("file", fileToUpload);
+
     try {
-      const response = await axios.post("http://localhost:8000/upload/", formData);
+      const response = await axios.post("http://localhost:8000/upload/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
       setUploadStatus(`File uploaded successfully! Columns: ${response.data.columns.join(", ")}`);
+      navigate('/output');
     } catch (error) {
       console.error("Error uploading file:", error);
       setUploadStatus("Error uploading file.");
     }
   };
-  
 
   return (
     <section className="relative flex flex-col items-center justify-center min-h-screen text-white bg-gradient-to-r from-purple-900 to-gray-900">
@@ -70,7 +81,7 @@ function Upload() {
 
       {/* Upload Button - Only enabled when a file is selected */}
       <button
-        onClick={handleFileUpload}
+        onClick={() => handleFileUpload(file)}
         className={`px-6 py-2 mt-4 rounded-full transition-all z-10 ${file ? 'bg-purple-500 text-white hover:bg-purple-600' : 'bg-gray-500 text-gray-300 cursor-not-allowed'}`}
         disabled={!file}
       >

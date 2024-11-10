@@ -1,63 +1,81 @@
-// Output.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Bar, Line, Pie } from 'react-chartjs-2';
+import { Bar, Pie } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js';
+
+// Register necessary components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 function Output() {
   const [prompt, setPrompt] = useState('');
   const [queryResults, setQueryResults] = useState([]);
   const [chartData, setChartData] = useState(null);
-  const [chartRecommendations, setChartRecommendations] = useState([]);
-  const [selectedChart, setSelectedChart] = useState(null); // Track selected chart recommendation
+  const [chartRecommendations, setChartRecommendations] = useState('');
+  const [selectedChart, setSelectedChart] = useState(''); // Track selected chart recommendation
   const [errorMessage, setErrorMessage] = useState('');
 
   // Fetch cleaned data and chart recommendations based on the user prompt
   const handleVisualizeData = async () => {
     try {
-      const response = await axios.post("http://localhost:8000/api/chart-recommendations/", { prompt });
+      const response = await axios.post("http://localhost:8000/Visualize/", { prompt: prompt.trim() });
       const data = response.data;
 
       setQueryResults(data.rows);
-      setChartRecommendations(JSON.parse(data.chart_recommendations)); // Parse chart recommendations JSON
+      setChartRecommendations(data.chart_recommendations); // Store as plain text
       setErrorMessage('');
     } catch (error) {
       console.error("Error fetching cleaned data:", error);
       setErrorMessage("There was an error fetching the data.");
     }
   };
-
+  
   // Prepare data for visualization based on selected chart type and columns
-  const prepareChartData = () => {
-    if (!selectedChart || !queryResults) return;
+  useEffect(() => {
+    if (!selectedChart || !queryResults.length) return;
 
-    const labels = queryResults.map(row => row[selectedChart.x]);
-    const values = queryResults.map(row => row[selectedChart.y]);
+    const labels = [...new Set(queryResults.map(row => row.Product))]; // Unique product names
+    const values = labels.map(label => queryResults.filter(row => row.Product === label).length); // Frequency count for each product
 
     setChartData({
       labels: labels,
       datasets: [
         {
-          label: selectedChart.chartType,
+          label: `${selectedChart} Chart`,
           data: values,
           backgroundColor: "rgba(75, 192, 192, 0.6)"
         }
       ]
     });
-  };
+  }, [selectedChart, queryResults]); // Trigger data preparation when selectedChart or queryResults change
 
   // Render the selected chart
   const renderChart = () => {
     if (!chartData) return null;
 
-    switch (selectedChart.chartType) {
+    switch (selectedChart) {
       case 'Bar':
         return <Bar data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />;
-      case 'Line':
-        return <Line data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />;
       case 'Pie':
         return <Pie data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />;
       default:
-        return null;
+        return <p>Select a valid chart type to view the visualization.</p>;
     }
   };
 
@@ -82,26 +100,29 @@ function Output() {
         Visualize the Data
       </button>
 
-      {/* Chart Type Recommendations */}
-      {chartRecommendations.length > 0 && (
+      {/* Chart Type Recommendations
+      {chartRecommendations && (
+        <div className="w-3/4 md:w-1/2 p-6 mb-6 bg-gray-800 rounded-md border-2 border-primaryPurple text-center shadow-lg">
+          <h3 className="text-xl font-semibold mb-4">Chart Recommendations</h3>
+          <p>{chartRecommendations}</p>
+        </div>
+      )} */}
+
+      {/* Chart Type Dropdown */}
+      <div className="w-3/4 md:w-1/2 mb-4">
         <select
-          className="mb-4 p-2 rounded-md text-black"
-          value={selectedChart ? selectedChart.chartType : ""}
-          onChange={(e) => {
-            const selected = chartRecommendations.find(rec => rec.chartType === e.target.value);
-            setSelectedChart(selected);
-            prepareChartData(); // Prepare chart data after selecting a chart type
-          }}
+          className="w-full p-2 rounded-md text-black"
+          value={selectedChart}
+          onChange={(e) => setSelectedChart(e.target.value)}
         >
           <option value="">Select Chart Type</option>
-          {chartRecommendations.map((rec, index) => (
-            <option key={index} value={rec.chartType}>{rec.chartType} Chart</option>
-          ))}
+          <option value="Bar">Bar Chart</option>
+          <option value="Pie">Pie Chart</option>
         </select>
-      )}
+      </div>
 
       {/* Display Table with Query Results */}
-      <div className="w-3/4 md:w-1/2 p-6 mb-6 bg-gray-800 rounded-md border-2 border-primaryPurple text-center shadow-lg">
+      {/* <div className="w-3/4 md:w-1/2 p-6 mb-6 bg-gray-800 rounded-md border-2 border-primaryPurple text-center shadow-lg">
         {queryResults.length > 0 ? (
           <table className="table-auto w-full">
             <thead>
@@ -124,7 +145,7 @@ function Output() {
         ) : (
           <p>No data to display.</p>
         )}
-      </div>
+      </div> */}
 
       {/* Display Selected Chart */}
       <div className="w-3/4 md:w-1/2 p-6 mb-6 bg-gray-800 rounded-md shadow-lg">
