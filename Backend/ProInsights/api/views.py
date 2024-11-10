@@ -9,7 +9,7 @@ from rest_framework import status
 from django.core.files.storage import default_storage
 import os
 # Configure Google Generative AI
-genai.configure(api_key="AIzaSyCWf0aLUCsFx2ec8sW6sWh5MhhzkfOlf1w")
+genai.configure(api_key="YOUR_API_KEY")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 
@@ -85,12 +85,26 @@ class GetChartRecommendations(APIView):
         if not user_prompt:
             return Response({"error": "Prompt cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Step 1: Generate SQL Query
-        sql_prompt = f"Generate an SQL query based on the following prompt: {user_prompt}. Use the table 'data' with columns {', '.join(pd.read_sql_query('SELECT * FROM data LIMIT 1', sqlite3.connect(DB_PATH)).columns)}."
-        
+        # Step 1: Prepare sample data and generate SQL Query Prompt
         try:
+            # Connect to the database and fetch a sample of the data
+            conn = sqlite3.connect(DB_PATH)
+            sample_df = pd.read_sql_query("SELECT * FROM data LIMIT 10", conn)  # Get a sample of the first 10 rows
+            sample_data = sample_df.to_json(orient='records')
+            conn.close()
+
+            # Formulate the prompt with the sample data to help the model understand the database structure
+            sql_prompt = (
+                f"Based on the user's request, generate a meaningful SQL query. The user asked: '{user_prompt}'. "
+                f"Here is a sample of the data in the table 'data' to give you context:\n\n{sample_data}\n\n"
+                f"Use this sample structure to generate an accurate SQL query that will retrieve data relevant to the user's request."
+            )
+            
+            # Send the prompt to the model to generate SQL
             sql_response = model.generate_content(sql_prompt)
             sql_text = sql_response.text if hasattr(sql_response, 'text') else sql_response.generated_text
+            
+            # Extract SQL query from the response, removing any extraneous markdown formatting
             sql_query_match = re.search(r'```sql\s*(.*?)\s*```', sql_text, re.DOTALL)
             sql_query = sql_query_match.group(1).strip() if sql_query_match else sql_text.strip()
             print("Generated SQL Query:", sql_query)
@@ -111,11 +125,14 @@ class GetChartRecommendations(APIView):
             return Response({"error": f"Failed to execute SQL query: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Step 3: Generate JSON-Compatible Chart Recommendations
-        chart_prompt = f"Recommend suitable chart types and necessary data columns for visualizing the following data:\n\n{df.head(10).to_json(orient='records')}"
+        chart_prompt = (
+            f"Recommend suitable chart types and necessary data columns for visualizing the following data:\n\n"
+            f"{df.head(10).to_json(orient='records')}"
+        )
         
         try:
             chart_response = model.generate_content(chart_prompt)
-            # Removing markdown formatting from recommendations for JSON compatibility
+            # Remove any markdown formatting from the recommendations for JSON compatibility
             recommended_charts = chart_response.text.strip() if hasattr(chart_response, 'text') else chart_response.generated_text.strip()
             recommended_charts = re.sub(r"##.*?\n|\*|-", "", recommended_charts)  # Remove headers and bullets
             print("Generated Chart Recommendations:", recommended_charts)

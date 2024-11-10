@@ -27,22 +27,26 @@ function Output() {
   const [prompt, setPrompt] = useState('');
   const [queryResults, setQueryResults] = useState([]);
   const [chartData, setChartData] = useState(null);
-  const [chartRecommendations, setChartRecommendations] = useState('');
   const [selectedChart, setSelectedChart] = useState(''); // Track selected chart recommendation
   const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false); // Loading state
 
   // Fetch cleaned data and chart recommendations based on the user prompt
   const handleVisualizeData = async () => {
+    setLoading(true); // Start loading
+    setErrorMessage(''); // Clear previous error messages
+
     try {
       const response = await axios.post("http://localhost:8000/Visualize/", { prompt: prompt.trim() });
       const data = response.data;
 
       setQueryResults(data.rows);
-      setChartRecommendations(data.chart_recommendations); // Store as plain text
       setErrorMessage('');
     } catch (error) {
       console.error("Error fetching cleaned data:", error);
       setErrorMessage("There was an error fetching the data.");
+    } finally {
+      setLoading(false); // Stop loading after the request completes
     }
   };
   
@@ -69,11 +73,14 @@ function Output() {
   const renderChart = () => {
     if (!chartData) return null;
 
+    const chartOptions = { responsive: true, maintainAspectRatio: false };
+    const chartSize = { width: 600, height: 400 }; // Increase chart size
+
     switch (selectedChart) {
       case 'Bar':
-        return <Bar data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />;
+        return <Bar data={chartData} options={chartOptions} {...chartSize} />;
       case 'Pie':
-        return <Pie data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />;
+        return <Pie data={chartData} options={chartOptions} {...chartSize} />;
       default:
         return <p>Select a valid chart type to view the visualization.</p>;
     }
@@ -96,17 +103,18 @@ function Output() {
       <button
         onClick={handleVisualizeData}
         className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-all mb-6"
+        disabled={loading} // Disable button while loading
       >
-        Visualize the Data
+        {loading ? "Loading..." : "Visualize the Data"}
       </button>
 
-      {/* Chart Type Recommendations
-      {chartRecommendations && (
-        <div className="w-3/4 md:w-1/2 p-6 mb-6 bg-gray-800 rounded-md border-2 border-primaryPurple text-center shadow-lg">
-          <h3 className="text-xl font-semibold mb-4">Chart Recommendations</h3>
-          <p>{chartRecommendations}</p>
+      {/* Loading Indicator */}
+      {loading && (
+        <div className="flex flex-col items-center mb-6">
+          <div className="spinner"></div>
+          <p className="text-purple-400 mt-2">AI is loading your data, please wait...</p>
         </div>
-      )} */}
+      )}
 
       {/* Chart Type Dropdown */}
       <div className="w-3/4 md:w-1/2 mb-4">
@@ -121,34 +129,8 @@ function Output() {
         </select>
       </div>
 
-      {/* Display Table with Query Results */}
-      {/* <div className="w-3/4 md:w-1/2 p-6 mb-6 bg-gray-800 rounded-md border-2 border-primaryPurple text-center shadow-lg">
-        {queryResults.length > 0 ? (
-          <table className="table-auto w-full">
-            <thead>
-              <tr>
-                {Object.keys(queryResults[0]).map((key) => (
-                  <th className="px-4 py-2 border-b" key={key}>{key}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {queryResults.map((row, index) => (
-                <tr key={index}>
-                  {Object.values(row).map((val, i) => (
-                    <td className="px-4 py-2 border-b" key={i}>{val}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p>No data to display.</p>
-        )}
-      </div> */}
-
       {/* Display Selected Chart */}
-      <div className="w-3/4 md:w-1/2 p-6 mb-6 bg-gray-800 rounded-md shadow-lg">
+      <div className="w-3/4 md:w-1/2 p-6 mb-6 bg-gray-800 rounded-md shadow-lg" style={{ width: '90%', height: '500px' }}>
         {renderChart()}
       </div>
 
