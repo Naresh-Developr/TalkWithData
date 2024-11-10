@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Bar, Pie } from 'react-chartjs-2';
+import { Bar, Pie, Line, Doughnut, Radar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
+  ArcElement,
+  RadialLinearScale,
   Title,
   Tooltip,
   Legend,
-  ArcElement,
 } from 'chart.js';
 
 // Register necessary components
@@ -17,7 +20,10 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
   ArcElement,
+  RadialLinearScale,
   Title,
   Tooltip,
   Legend
@@ -49,7 +55,7 @@ function Output() {
       setLoading(false); // Stop loading after the request completes
     }
   };
-  
+
   // Prepare data for visualization based on selected chart type and columns
   useEffect(() => {
     if (!selectedChart || !queryResults.length) return;
@@ -63,7 +69,9 @@ function Output() {
         {
           label: `${selectedChart} Chart`,
           data: values,
-          backgroundColor: "rgba(75, 192, 192, 0.6)"
+          backgroundColor: "rgba(75, 192, 192, 0.6)",
+          borderColor: "rgba(75, 192, 192, 1)",
+          borderWidth: 1,
         }
       ]
     });
@@ -81,6 +89,12 @@ function Output() {
         return <Bar data={chartData} options={chartOptions} {...chartSize} />;
       case 'Pie':
         return <Pie data={chartData} options={chartOptions} {...chartSize} />;
+      case 'Line':
+        return <Line data={chartData} options={chartOptions} {...chartSize} />;
+      case 'Doughnut':
+        return <Doughnut data={chartData} options={chartOptions} {...chartSize} />;
+      case 'Radar':
+        return <Radar data={chartData} options={chartOptions} {...chartSize} />;
       default:
         return <p>Select a valid chart type to view the visualization.</p>;
     }
@@ -91,7 +105,7 @@ function Output() {
       <h2 className="text-3xl font-semibold mb-6">Output Page</h2>
 
       {/* Prompt Input Field */}
-      <input 
+      <input
         className="w-3/4 md:w-1/2 p-4 mb-4 text-black rounded-md border-2 border-primaryPurple focus:outline-none shadow-lg"
         type="text"
         placeholder="Enter your analysis prompt"
@@ -111,7 +125,18 @@ function Output() {
       {/* Loading Indicator */}
       {loading && (
         <div className="flex flex-col items-center mb-6">
-          <div className="spinner"></div>
+          <div
+            className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full text-purple-500"
+            style={{
+              borderTopColor: 'transparent',
+              borderRightColor: 'transparent',
+              borderRadius: '50%',
+              borderWidth: '4px',
+            }}
+            role="status"
+          >
+            <span className="sr-only">Loading...</span>
+          </div>
           <p className="text-purple-400 mt-2">AI is loading your data, please wait...</p>
         </div>
       )}
@@ -126,6 +151,9 @@ function Output() {
           <option value="">Select Chart Type</option>
           <option value="Bar">Bar Chart</option>
           <option value="Pie">Pie Chart</option>
+          <option value="Line">Line Chart</option>
+          <option value="Doughnut">Doughnut Chart</option>
+          <option value="Radar">Radar Chart</option>
         </select>
       </div>
 

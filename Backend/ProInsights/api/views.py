@@ -9,7 +9,7 @@ from rest_framework import status
 from django.core.files.storage import default_storage
 import os
 # Configure Google Generative AI
-genai.configure(api_key="YOUR_API_KEY")
+genai.configure(api_key="AIzaSyCWf0aLUCsFx2ec8sW6sWh5MhhzkfOlf1w")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 
