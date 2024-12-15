@@ -102,7 +102,7 @@ function Output() {
 
   return (
     <section className="flex flex-col items-center p-8 bg-darkBg min-h-screen text-white">
-      <h2 className="text-3xl font-semibold mb-6">Output Page</h2>
+      <h2 className="text-3xl font-semibold mb-6">Start Chatting with Your Data </h2>
 
       {/* Prompt Input Field */}
       <input
