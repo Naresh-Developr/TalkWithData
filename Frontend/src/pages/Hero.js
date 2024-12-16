@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import bgImage from '../Assets/gradiant-bg.png'; // Correct path to the image
+import bgImage from '../Assets/gradiant-bg1.png'; // Correct path to the image
 
 function Hero() {
   const navigate = useNavigate();
